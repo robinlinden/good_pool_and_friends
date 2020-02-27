@@ -1,0 +1,16 @@
+cc_library(
+    name = "good_pool",
+    srcs = ["good_pool.c"],
+    hdrs = ["good_pool.h"],
+    visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "test_good_pool",
+    size = "small",
+    srcs = ["test_good_pool.cpp"],
+    deps = [
+        ":good_pool",
+        "@gtest//:gtest_main",
+    ],
+)
