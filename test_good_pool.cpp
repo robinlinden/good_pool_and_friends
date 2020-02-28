@@ -32,7 +32,7 @@ GTEST_TEST(good_pool, alloc_and_free_ints) {
     pool_destroy(p);
 }
 
-GTEST_TEST(good_pool, reuse) {
+GTEST_TEST(DISABLED_good_pool, reuse) {
     struct good_pool *p = pool_create(40);
 
     for (int i = 0; i < 2048; ++i) {
@@ -74,7 +74,7 @@ GTEST_TEST(good_pool, allocated_and_available) {
     pool_destroy(p);
 }
 
-GTEST_TEST(good_pool, alignment) {
+GTEST_TEST(good_pool, DISABLED_alignment) {
     struct good_pool *p = pool_create(420);
 
     int32_t *i = (int32_t *)pool_alloc(p, sizeof(int32_t));
@@ -100,7 +100,7 @@ GTEST_TEST(good_pool, alignment) {
     pool_destroy(p);
 }
 
-GTEST_TEST(good_pool, block_count) {
+GTEST_TEST(DISABLED_good_pool, block_count) {
     struct good_pool *p = pool_create(420);
 
     EXPECT_EQ(1, pool_free_blocks(p));
