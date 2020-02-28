@@ -1,6 +1,8 @@
 #include "good_pool.h"
 
 #include <cstdint>
+#include <list>
+#include <random>
 
 #include <gtest/gtest.h>
 
@@ -39,6 +41,7 @@ GTEST_TEST(DISABLED_good_pool, reuse) {
         void *ptr = pool_alloc(p, rand() % 16);
         ASSERT_NE(nullptr, ptr);
         pool_free(p, ptr);
+        EXPECT_EQ(40, pool_available(p));
     }
 
     pool_destroy(p);
@@ -137,6 +140,37 @@ GTEST_TEST(DISABLED_good_pool, block_count) {
     pool_free(p, bot);
     EXPECT_EQ(1, pool_free_blocks(p));
     EXPECT_EQ(0, pool_used_blocks(p));
+
+    pool_destroy(p);
+}
+
+GTEST_TEST(good_pool, randoms_allocs) {
+    constexpr auto iterations = 2;
+    constexpr auto pool_size = 4 * 1024 * 1024;
+    constexpr auto max_item_size = 1024;
+    constexpr auto lower_bound = static_cast<int>(0.1 * pool_size);
+    constexpr auto upper_bound = static_cast<int>(0.8 * pool_size);
+
+    struct good_pool *p = pool_create(pool_size);
+    auto rng{std::minstd_rand()};
+    std::list<void *> allocs{};
+
+    for (uint8_t i = 0; i < iterations; ++i) {
+        while (pool_available(p) > lower_bound) {
+            allocs.push_back(pool_alloc(p, rng() % max_item_size));
+        }
+
+        while (pool_available(p) < upper_bound) {
+            auto alloc = allocs.begin();
+            std::advance(alloc, rng() % allocs.size());
+            pool_free(p, *alloc);
+            allocs.erase(alloc);
+        }
+    }
+
+    for (auto alloc : allocs) {
+        pool_free(p, alloc);
+    }
 
     pool_destroy(p);
 }

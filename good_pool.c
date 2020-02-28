@@ -95,14 +95,14 @@ void *pool_alloc(struct good_pool *p, size_t sz) {
         p->free = NULL;
     }
 
-    if (i->sz > actual_sz) {
+    if (i->sz >= actual_sz + sizeof(struct good_pool_item)) {
         struct good_pool_item *remainder = (void *)((char *)i + actual_sz);
         remainder->sz = i->sz - actual_sz;
+        i->sz = actual_sz;
         remainder->next = p->free;
         p->free = remainder;
     }
 
-    i->sz = actual_sz;
     i->next = p->used;
     p->used = i;
 
