@@ -67,6 +67,36 @@ static struct good_pool_item *to_pool_ptr(void *ptr) {
     return (void *)((char *)ptr - sizeof(struct good_pool_item));
 }
 
+static void pool_coalesce(struct good_pool *p) {
+    if (!p->free || !p->free->next) return;
+
+    if (p->free > p->free->next) {
+        struct good_pool_item *tmp = p->free->next;
+        p->free->next = tmp->next;
+        tmp->next = p->free;
+        p->free = tmp;
+    }
+
+    for (struct good_pool_item *i = p->free;
+            i->next != NULL && i->next->next != NULL;
+            i = i->next) {
+        if (i->next > i->next->next) {
+            struct good_pool_item *tmp = i->next->next;
+            i->next->next = tmp->next;
+            tmp->next = i->next;
+            i->next = tmp;
+        }
+    }
+
+    for (struct good_pool_item *i = p->free; i->next != NULL; i = i->next) {
+        if ((uintptr_t)i + i->sz == (uintptr_t)i->next) {
+            i->sz += i->next->sz;
+            i->next = i->next->next;
+            if (i->next == NULL) return;
+        }
+    }
+}
+
 // TODO(robinlinden): Let the pool live in the one allocation? Probably.
 struct good_pool *pool_create(size_t sz) {
     struct good_pool *p = malloc(sizeof(*p));
@@ -118,6 +148,8 @@ void pool_free(struct good_pool *p, void* ptr) {
 
     i->next = p->free;
     p->free = i;
+
+    pool_coalesce(p);
 }
 
 size_t pool_available(const struct good_pool *p) {
