@@ -21,12 +21,9 @@ GTEST_TEST(good_pool, alloc_and_free_ints) {
     EXPECT_NE(nullptr, i);
     int32_t *j = (int32_t *)pool_alloc(p, sizeof(int32_t));
     EXPECT_NE(nullptr, j);
-    int32_t *k = (int32_t *)pool_alloc(p, sizeof(int32_t));
+    int64_t *k = (int64_t *)pool_alloc(p, sizeof(int64_t));
     EXPECT_NE(nullptr, k);
-    int32_t *l = (int32_t *)pool_alloc(p, sizeof(int32_t));
-    EXPECT_NE(nullptr, l);
 
-    pool_free(p, l);
     pool_free(p, i);
     pool_free(p, k);
     pool_free(p, j);
@@ -77,7 +74,7 @@ GTEST_TEST(good_pool, allocated_and_available) {
     pool_destroy(p);
 }
 
-GTEST_TEST(good_pool, DISABLED_alignment) {
+GTEST_TEST(good_pool, alignment) {
     struct good_pool *p = pool_create(420);
 
     int32_t *i = (int32_t *)pool_alloc(p, sizeof(int32_t));
@@ -99,6 +96,17 @@ GTEST_TEST(good_pool, DISABLED_alignment) {
     EXPECT_NE(nullptr, l);
     EXPECT_EQ(0, (uintptr_t)l % 8);
     pool_free(p, l);
+
+    pool_destroy(p);
+}
+
+GTEST_TEST(good_pool, overhead) {
+    constexpr auto expected_overhead = sizeof(void *) * 2;
+    struct good_pool *p = pool_create(sizeof(double) + expected_overhead);
+
+    double *i = (double *)pool_alloc(p, sizeof(double));
+    ASSERT_NE(nullptr, i);
+    pool_free(p, i);
 
     pool_destroy(p);
 }
@@ -158,6 +166,10 @@ GTEST_TEST(good_pool, randoms_allocs) {
     for (uint8_t i = 0; i < iterations; ++i) {
         while (pool_available(p) > lower_bound) {
             allocs.push_back(pool_alloc(p, rng() % max_item_size));
+        }
+
+        for (auto alloc : allocs) {
+            EXPECT_EQ(0, (uintptr_t)alloc % 8);
         }
 
         while (pool_available(p) < upper_bound) {

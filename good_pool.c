@@ -85,6 +85,7 @@ void pool_destroy(struct good_pool *p) {
 }
 
 void *pool_alloc(struct good_pool *p, size_t sz) {
+    sz += (8 - sz % 8) % 8;
     size_t actual_sz = sz + sizeof(struct good_pool_item);
     struct good_pool_item *i = first_fit(p, actual_sz);
     if (!i) return NULL;
