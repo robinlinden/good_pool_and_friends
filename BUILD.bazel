@@ -14,3 +14,20 @@ cc_test(
         "@gtest//:gtest_main",
     ],
 )
+
+cc_library(
+    name = "pool2",
+    srcs = ["pool2.c"],
+    hdrs = ["pool2.h"],
+    visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "test_pool2",
+    size = "small",
+    srcs = ["test_pool2.cpp"],
+    deps = [
+        ":pool2",
+        "@gtest//:gtest_main",
+    ],
+)
